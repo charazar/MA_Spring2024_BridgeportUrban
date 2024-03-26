@@ -1,0 +1,68 @@
+**Project:** Bridgeport Urban   
+
+**Node:** MA - Boston
+
+**Term:** Spring 2024
+
+**Team:** Silas Kirsch (Project Lead), John Hocknell, Maggie Roseto, Charlotte Tomlinson 
+
+**Code Contact:** Charlotte Tomlinson, cbramwellt@gmail.com        
+
+## Introduction  
+This code is largely based on step 1 of the UHEAT 1.0 script, created by the Fall 2020 AZ DEVELOP team (see link below). The Tidycensus script brings in socio-economic data from the census, in this case the ACS from 2017-2021. The script performs statistical analysis on a variety of socie-economic factors within different Census Block Groups in the city of Bridgeport. We then adapt those variables within a CSV to import to the PCA. 
+
+https://github.com/NASA-DEVELOP/UHEAT/tree/main 
+
+## Applications and Scope   
+Where will the code be used, and to what extent?   
+This code is important to the process of creating the Principal Compoenent Analysis. It measures the vulnerability within certain socio-demographics and creates data that can be overlayed with the other components of a PCA, (LST from GEE). 
+
+## Capabilities 
+The resulting code is used for block group level data for Bridgeport, CT, and is designed to expeditiously analyze the dimensions of heat vulnerability to then aid in the  identification the areas that require cooling intervention.
+
+## Interfaces 
+Socioeconomic data as written out by 
+MA_Bridgeport_UDII_Spring2024_TidyCensus.R
+
+### Languages
+The only language this part of the project used is R. 
+
+### Packages
+What other libraries or software packages does it rely on?  
+"tidyverse","tidycensus","foreign","sf",
+
+## Parameters
+We reccomend using census tracts as your level for looking at the census, as this is the highest quality for ACS, block group gets more convuluded. You can also use tracts to blend with health data better. 
+
+
+## Assumptions, Limitations, & Errors 
+We had to manually edit our GEOID Fips codes due to discrepancies between Bridgeport Fips codes and Fairfield County. You will need to edit that line of code when looking at combining your GEOID's with your census data.
+
+## Support
+For relevant tutorials navigate to UHEAT README.
+    https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2FNASA-DEVELOP%2FUHEAT%2Fmain%2F2020Fall_AZ_TempeUrb     anII_DraftCode_FD%2FFall2020_CodeTutorial_TempeUDII.docx&wdOrigin=BROWSELINK 
+
+Contact Charlotte Tomlinson (cbramwellt@gmail.com) for specific questions related to code which deviates from the original UHEAT
+
+Helpful Links: 
+
+	Tempe Word Tutorial 
+	https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2FNASA-DEVELOP%2FUHEAT%2Fmain%2F2020Fall_AZ_TempeUrb     anII_DraftCode_FD%2FFall2020_CodeTutorial_TempeUDII.docx&wdOrigin=BROWSELINK  
+	
+	Understanding Geographic Identifiers (GEOIDs)
+      https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2FNASA-DEVELOP%2FUHEAT%2Fmain%2F2020Fall_AZ_TempeU       rbanII_DraftCode_FD%2FFall2020_CodeTutorial_TempeUDII.docx&wdOrigin=BROWSELINK  
+
+	Spatial data in tidycensus  
+     https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2FNASA-DEVELOP%2FUHEAT%2Fmain%2F2020Fall_AZ_TempeUr      banII_DraftCode_FD%2FFall2020_CodeTutorial_TempeUDII.docx&wdOrigin=BROWSELINK 
+
+## Acknowledgments
+Created by: Lance Watkins, Ph.D. School of Geographical Sciences and Urban Planning
+           Arizona State University
+
+Modified by: Blake A Steiner
+Date created: Oct. 15, 2020
+History:  
+           Oct. 15, 2020 - bas - created to extract census data from tidy census
+           Oct. 22, 2020 - bas - modified code to fit context of Tempe
+           Oct. 29, 2020 - bas - Reran code for testing and edited it
+########################################################################
