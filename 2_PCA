@@ -1,1 +1,223 @@
+##MA_Bridgeport_PCA
 
+#######################################################################
+##Set up Libraries
+#######################################################################
+
+#specify the packages of required for this analysis
+packages = c("tidyverse","psych","paran","reshape2",
+             "tidycensus", "tigris","sf","ggpubr","MVN", 
+             "RColorBrewer", "pheatmap", "grid")
+
+
+#use this function to check if each package is on the local machine
+#if a package is installed, it will be loaded
+#if any are not, the missing package(s) will be installed and loaded
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+rm(package.check);rm(packages)
+
+
+#Set your working directory
+setwd("C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2")
+
+# Input filenames
+ 
+#Census or American Community Survey derived variables (or health variables, too)
+SEH_filename <- "C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2/MA_Spring2024/R_Scripts/Output_R/TEST_TMP_UHEAT_CENSUS_VARIABLES_2021_acs5_CT_ALLVariables_E_2024-03-13 - TMP_UHEAT_CENSUS_VARIABLES_2021_acs5_CT_ALLVariables_E_2024-03-13.csv"
+
+#Transport Factor
+Tx_filename <- "C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2/MA_Spring2024/Independent_CSV's/BusStopperBLKGRP_Join - BusStopperBLKGRP_Join.csv"
+
+# specify name under which to save the output
+savename='MA_Bridgeport_UDII_SP2024_Var_Scores_20240312.csv'
+
+
+#######################################################################
+## Heat Vulnerability Score 
+#######################################################################
+
+# Load data
+SEH_data = read.csv(SEH_filename)
+
+
+# Standardize variables 
+# (all variables are represented as z-scores, with mean=0, std=1)
+SEH.input <- SEH_data[,2:ncol(SEH_data)]
+
+# standardize
+SEH.input_z <- scale(SEH.input, center = T) #standardize, mean=0,sd=1
+
+
+## STEP 1: COMPONENT SELECTION
+# There are 3 common ways to decide which components to retain, all of which we explored.
+# Principal Component Analysis
+SEH.pca_all <- principal(SEH.input_z, nfactors = ncol(SEH.input_z), rotate = 'none', scores = T) 
+#unrotated full component solution for use in determining number of components to retain
+
+# 1. Eigenvalues > 1 (Kaiser criterion)
+SEH.pca_all$values #print eigenvalues
+paste0("Number of components suggested based on Kaiser criterion: ",which(SEH.pca_all$values<1)[1] - 1) #print last component number to be greater than 1
+
+# 2. Accounting for a prescribed amount of variance (we chose 80%, though 70% is also common)
+v=(SEH.pca_all$Vaccounted)[3,1:ncol(SEH.pca_all$Vaccounted)] #print amount of variance accounted for 
+paste0("Number of components suggested based on 80% variance threshold: ",which( v>.8)[1])
+
+# 3. Scree plot
+# components with biggest gradient are included
+scree(SEH.input_z,hline = -1,factors = F)
+
+# Compare PCA result to a PCA carried out on randomly generated data 
+# (same number of variables, and observations)
+set.seed(123) #note this allows you to save the randomly generated data so others can reproduce the work 
+SEH.input_z_repl=SEH.input_z
+SEH.input_z_repl[which(is.na(SEH.input_z_repl))]=0
+paran.pca <- paran(SEH.input_z_repl,iterations = 100, all = T, cfa = F, quietly = T)
+
+obs <- data.frame(1:ncol(SEH.input_z),paran.pca$Ev,paran.pca$RndEv,apply(paran.pca$SimEvs, 2, function(x) quantile(x,.95)))
+colnames(obs) <- c("Components","Eigenvalues","Mean Simulated","95th Pctl Simulated")
+round(obs,3)
+
+obs_melt <- melt(obs,id.vars = "Components")
+colnames(obs_melt) <- c("Components","Variable","Eigenvalues")
+
+# Make plot
+print(ggplot(data = obs_melt, aes(x=Components, y=Eigenvalues, group = Variable))+
+        geom_line(aes(color = Variable))+
+        theme(legend.position = 'top')+
+        scale_x_continuous(breaks = 1:ncol(SEH.input_z))+
+        ggtitle("Parallel Analysis of SVI Dataset using PCA"))
+
+# Comparing these different approaches, two out of three indicated that 
+# 2 components should be selected. 
+# Comparing different number of components extracted
+SEH.pca_2 <- principal(SEH.input_z, 
+                       nfactors = 2, #how many components  
+                       rotate = 'varimax', scores = T)
+
+## STEP 2: SIGN DETERMINATION
+#Investigate loadings to make sure the 'sign' is appropriate (larger values should = higher vulnerability)
+print.psych(SEH.pca_2,cut = .4, sort = T)
+# Note: signs on all variables and components correspond to the relationship we expect between the variables 
+# and heat vulnerability. No sign change was necessary.
+
+## STEP 3: PRINCIPAL COMPONENT ANALYSIS 
+# Do PCA with select number of components and varimax rotation
+tempSEH <- SEH.input_z
+SEH.pca_2 <- principal(tempSEH, nfactors = 2, rotate = 'varimax', scores = T)
+print.psych(SEH.pca_2,sort = T, cut = .4)
+
+# Extract loadings and explained variance
+SEH_pca_2_output <- (fa.sort(SEH.pca_2))$loadings[,1:2]
+
+# Plot Loadings
+# set colnames
+colnames(SEH_pca_2_output)=c("PC1", "PC2"
+                             #, "PC3" remember to add components here if eigenvalues say to have more than two
+)
+
+# create function that rotates labels 45 degrees
+draw_colnames_45 <- function (coln, gaps, ...) {
+  coord = pheatmap:::find_coordinates(length(coln), gaps)
+  x = coord$coord - 0.5 * coord$size
+  res = textGrob(coln, x = x, y = unit(1, "npc") - unit(3,"bigpts"), vjust = 0.5, hjust = 1, rot = 45, gp = gpar(...))
+  return(res)}
+
+assignInNamespace(x="draw_colnames", value="draw_colnames_45",
+                  ns=asNamespace("pheatmap"))
+
+# Save Heatmap of loadings
+postscript("Heatmap_HVS_2Components_TechPaper.eps", horizontal = FALSE, onefile = FALSE, paper = "special", 
+           point=9, height = 4.5, width = 3.5)
+pheatmap(SEH_pca_2_output, color = brewer.pal(n = 10, name = "Oranges"),
+         #legend_breaks = c(-1, -0.5, 0, 0.5, 1),
+         treeheight_row = 0, treeheight_col = 0, 
+         cluster_rows=F, cluster_cols=F)
+dev.off()
+
+# Extract variance and print
+SEH_pca_2_output <- round( rbind(SEH_pca_2_output,SEH.pca_2$Vaccounted[1:2,1:2]),2)
+print(SEH_pca_2_output)
+
+# Extract scores (this are simple sums of scores for each component and block group)
+SEHscores_2 <- SEH.pca_2$scores
+
+
+
+
+
+#######################################################################
+## Save Data (this will need a bit of editing)
+#######################################################################
+# create variable of difference to the mean
+DMu = (t(apply(SEH.input, 1, function(x) x-colMeans(SEH.input, na.rm=TRUE))))
+
+
+
+# save output
+#NOTE: double check the row order of your SEH CTs
+output<-cbind(as.character(SEH_data$GEOID), #common key 
+             SEH.input, #all variables
+             DMu, #difference from the mean for all variables
+             as.numeric(rowSums(SEH.pca_2$scores))) #scores for the maps
+          
+
+
+
+# Rename columns
+names(output)<-c("GEOID", 
+                "MINORITY", "POVERTY", 
+                "NO_hsDIP", "1980_STRUCTURES", "NO_VEHICLE", "ELDERLY", "DISABILITY",  "OVER65_ALONE",  
+              
+               
+       "MINORITY_DMU", "POVERTY_DMU", 
+               "NO_hsDIP_DMU",  "1980_STRUCTURES_DMU", "NO_VEHICLE_DMU", "ELDERLY_DMU", "DISABILITY_DMU", "OVER65_ALONE_DMU",  
+             
+                "HVS_SCORE"
+         
+)
+
+# save a csv file 
+write.csv(output,savename)#######################################################################
+
+
+
+#######################################################################
+## Save Data
+#######################################################################
+# create variable of difference to the mean
+DMu = (t(apply(HPS.input, 1, function(x) x-colMeans(HPS.input, na.rm=TRUE))))
+
+
+# save output
+# NOTE: double check the row order of your ENV and SEH CTs
+output=cbind(as.character(SEH_data$GEOID), #common key 
+             HPS.input, #all variables
+             DMu, #difference from the mean for all variables
+      
+             as.numeric(rowSums(SEH.pca_2$scores)), #scores for the maps
+            
+)
+
+
+# Rename columns
+names(output)=c("GEOID", 
+                "TOTAL_POP", "MED_INCOME", "MINORITY", "POVERTY", 
+                "NO_hsDIP",  "OVER65", "OVER65_ALONE", "ALONE", 
+                #                "LIMENG_PER", "NWHITE_PER", "ISOL65_PER", "POVRTY_PER",
+                "dLST", "nLST","NDVI","NDBI","NDWI", "albedo",
+                "TOTAL_POP_DMU", "MED_INCOME_DMU", "MINORITY_DMU", "POVERTY_DMU", 
+                "NO_hsDIP_DMU",  "OVER65_DMU", "OVER65_ALONE_DMU", "ALONE_DMU",  
+                #                "LIMENG_DMU", "NWHITE_DMU", "ISOL65_DMU", "POVRTY_DMU",
+                "dLST_DMU", "nLST_DMU","NDVI_DMU","NDBI_DMU","NDWI_DMU", "albedo_DMU",
+                "HES_SCORE", 
+                "HVS_SCORE", 
+                "HPS_SCORE"
+)
+
+# save a csv file 
+write.csv(output,savename)
