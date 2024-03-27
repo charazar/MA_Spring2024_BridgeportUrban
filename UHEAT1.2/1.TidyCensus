@@ -54,6 +54,8 @@ options(tigris_use_cache = TRUE)
 # TIPS
 ############################
 
+#census tract data is best for this code
+#you will need to adapt the specific factors based on your own. 
 
 ## Additional Links for working with tidy census and census data in R
 
@@ -70,7 +72,7 @@ options(tigris_use_cache = TRUE)
 # Set your environment
 ############################
 
-#Insert your key here
+#Insert your own API key here
 api_key <- "c1d45bf98424ad91c28368a363dd79953ef52a85" #My API Key
 census_api_key(api_key, install = TRUE, overwrite = TRUE)
 
@@ -92,11 +94,12 @@ acs_variables <- load_variables(2021, "acs5")
 
 
 
-#Set your working directory
-setwd("C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2")
+#Set your working directory (your personal working directory)
+setwd("C:/Users/etc
 
 
-#Pull region in question boundaries (tracts or blocks)
+#Pull region in question boundaries (tracts or blocks) 
+#(for this step we had to do some personal editing due to the nature of our FIPS codes, you should be able to bring in just one region_bg_ID!
 region_bg_ID_old <- as.character(read.dbf("2021_BG_data/tl_2021_09_bg.dbf")$GEOID)
 region_bg_ID <- as.character(read.dbf("BP_GEOID_BLKGRPS.dbf")$GEOID)
 
@@ -107,7 +110,7 @@ colnames(output.df) <- "GEOID"
 output.df.old <- as.data.frame(region_bg_ID_old)
 colnames(output.df.old) <- "GEOID"
 
-#Filter variables to your GEOIDs
+#Filter variables to your GEOIDs (do this step but ignore line 115, this is where we had to specifically filter our GEOIDs
 output.df.fipsedited <- data.frame(
   GEOID = c(str_replace(output.df$GEOID, "120", "001")))
 
@@ -123,7 +126,7 @@ v18 <- load_variables(2021, #Year or ending year of 5 year ACS
 View(v18) #Will bring up the dataframe with all the ACS variables for the dataset we pulled. Useful reference
 
 
-
+##Below is where you input your own data, or use the same factors we did and tweak to your personal SVI!
 ############################
 # Ethnic Minority (%)
 ############################
