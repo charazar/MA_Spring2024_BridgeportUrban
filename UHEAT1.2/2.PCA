@@ -1,4 +1,4 @@
-##MA_Bridgeport_PCA
+##MA_Bridgeport_PCA // UHEAT1.2
 
 #######################################################################
 ##Set up Libraries
@@ -30,7 +30,9 @@ setwd("C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2")
 #Census or American Community Survey derived variables (or health variables, too)
 SEH_filename <- "C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2/MA_Spring2024/R_Scripts/Output_R/TEST_TMP_UHEAT_CENSUS_VARIABLES_2021_acs5_CT_ALLVariables_E_2024-03-13 - TMP_UHEAT_CENSUS_VARIABLES_2021_acs5_CT_ALLVariables_E_2024-03-13.csv"
 
-#Transport Factor
+##We did not use the tranportation factor due to Block group level issues but this is where you would input those other CSV's for the PCA
+#Health Factor
+#example: Transport Factor
 Tx_filename <- "C:/Users/charc/OneDrive/Desktop/PCABridgeport/BridgeportPCA2/MA_Spring2024/Independent_CSV's/BusStopperBLKGRP_Join - BusStopperBLKGRP_Join.csv"
 
 # specify name under which to save the output
@@ -38,6 +40,7 @@ savename='MA_Bridgeport_UDII_SP2024_Var_Scores_20240312.csv'
 
 
 #######################################################################
+#Below is the HVS calculated from the Census input, if you were to add other inputs, you would do this process again for those inputs and then combine them at the end (noted in line 206)
 ## Heat Vulnerability Score 
 #######################################################################
 
@@ -200,6 +203,7 @@ output=cbind(as.character(SEH_data$GEOID), #common key
              DMu, #difference from the mean for all variables
       
              as.numeric(rowSums(SEH.pca_2$scores)), #scores for the maps
+  ### this is where you would add the other inputs, as.numeric(etc. 
             
 )
 
